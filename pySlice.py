@@ -3,6 +3,7 @@
 """
 The MIT License (MIT)
 
+pySlice.py
 Copyright (c) 2013 Matthew Else
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -72,88 +73,50 @@ interval = scale * resolution
 
 targetz = 240
 
+def findInterpolatedPoint(A, B):
+	# Find the vector between the two...
+
+	V = (float(B[0]-A[0]), float(B[1]-A[1]), float(B[2]-A[2]))
+
+	# Therefore the interpolated point = ('some n' * V)+A
+
+	# ( x )   
+	# ( y ) = n*V + A 
+	# (240)
+
+	refz = targetz - A[2]
+
+	# ( x  )
+	# ( y  ) = nV
+	# (refz)
+
+	n = float(refz/V[2])
+
+	coords = (n * V[0] + A[0], n * V[1] + A[1])
+
+	return (coords)
+
 for facet in stlobj.facets:
-    	
     if (facet.v[0].z > targetz and facet.v[1].z < targetz) or (facet.v[0].z < targetz and facet.v[1].z > targetz):
         # Calculate the coordinates of one segment at z = 240 (between v[0] and v[1])
 
     	A = (facet.v[0].x, facet.v[0].y, facet.v[0].z)
     	B = (facet.v[1].x, facet.v[1].y, facet.v[1].z)
 
-    	# Find the vector between the two...
+    	print (findInterpolatedPoint(A, B))
 
-    	V = (float(B[0]-A[0]), float(B[1]-A[1]), float(B[2]-A[2]))
-
-    	# Therefore the interpolated point = ('some n' * V)+A
-
-    	# ( x )   
-    	# ( y ) = n*V + A 
-    	# (240)
-
-    	refz = targetz - A[2]
-
-    	# ( x  )
-    	# ( y  ) = nV
-    	# (refz)
-
-    	n = float(refz/V[2])
-
-    	coords = (n * V[0] + A[0], n * V[1] + A[1])
-
-    	print coords
-
-    elif (facet.v[0].z > targetz and facet.v[2].z < targetz) or (facet.v[0].z < targetz and facet.v[2].z > targetz):
+    if (facet.v[0].z > targetz and facet.v[2].z < targetz) or (facet.v[0].z < targetz and facet.v[2].z > targetz):
         # Calculate the coordinates of one segment at z = 240 (between v[0] and v[2])
 
         A = (facet.v[0].x, facet.v[0].y, facet.v[0].z)
         B = (facet.v[2].x, facet.v[2].y, facet.v[2].z)
 
-        # Find the vector between the two...
+        print (findInterpolatedPoint(A, B))
 
-        V = (float(B[0]-A[0]), float(B[1]-A[1]), float(B[2]-A[2]))
-
-        # Therefore the interpolated point = ('some n' * V)+A
-
-        # ( x )   
-        # ( y ) = n*V + A 
-        # (240)
-
-        refz = targetz - A[2]
-
-        # ( x  )
-        # ( y  ) = nV
-        # (refz)
-
-        n = float(refz/V[2])
-
-        coords = (n * V[0] + A[0], n * V[1] + A[1])
-
-        print coords
-
-    elif (facet.v[1].z > targetz and facet.v[2].z < targetz) or (facet.v[1].z < targetz and facet.v[2].z > targetz):
+    if (facet.v[1].z > targetz and facet.v[2].z < targetz) or (facet.v[1].z < targetz and facet.v[2].z > targetz):
         # Calculate the coordinates of one segment at z = 240 (between v[1] and v[2])
 
         A = (facet.v[1].x, facet.v[1].y, facet.v[1].z)
         B = (facet.v[2].x, facet.v[2].y, facet.v[2].z)
 
-        # Find the vector between the two...
-
-        V = (float(B[0]-A[0]), float(B[1]-A[1]), float(B[2]-A[2]))
-
-        # Therefore the interpolated point = ('some n' * V)+A
-
-        # ( x )   
-        # ( y ) = n*V + A 
-        # (240)
-
-        refz = targetz - A[2]
-
-        # ( x  )
-        # ( y  ) = nV
-        # (refz)
-
-        n = float(refz/V[2])
-
-        coords = (n * V[0] + A[0], n * V[1] + A[1])
-
-        print coords
+        print (findInterpolatedPoint(A, B))
