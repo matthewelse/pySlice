@@ -249,6 +249,9 @@ class Surface(object):
         else:
             self.processfacets = self._process_txt(con)
 
+        for result in self.processfacets:
+            pass
+
     def __str__(self):
         s = "solid {}\n".format(self.name)
         for f in self.facets:
@@ -370,7 +373,7 @@ class Surface(object):
         c = 3*len(self.facets)
         return (self.mx/c, self.my/c, self.mz/c)
 
-    def stats(self, prefix=''):
+    def stats(self):
         out = {
             'name': self.name,
             'facets': len(self.facets),
