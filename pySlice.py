@@ -25,7 +25,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
 from stl import Surface, Vertex, Normal
-
+from svgwrite import Drawing, rgb
 
 resolution = 0.1 # mms
 scale = 10
@@ -66,12 +66,12 @@ for facet in stlobj.facets:
 	v = stlobj.facets[0].v[2] - stlobj.facets[0].v[0]
 
 	facet.n = Normal((u.y * v.z)-(u.z*v.y), (u.z*v.x)-(u.x*v.z), (u.x*v.y)-(u.y*v.x))
-
+	stlobj._updateextents(facet)
 # So now, we have all of the points as integers...
 
 interval = scale * resolution
-
-targetz = 240
+stats = stlobj.stats()
+print (stats)
 
 def findInterpolatedPoint(A, B):
 	# Find the vector between the two...
@@ -92,31 +92,48 @@ def findInterpolatedPoint(A, B):
 
 	n = float(refz/V[2])
 
-	coords = (n * V[0] + A[0], n * V[1] + A[1])
+	coords = (int(n * V[0] + A[0]), int(n * V[1] + A[1]))
 
 	return (coords)
 
-for facet in stlobj.facets:
-    if (facet.v[0].z > targetz and facet.v[1].z < targetz) or (facet.v[0].z < targetz and facet.v[1].z > targetz):
-        # Calculate the coordinates of one segment at z = 240 (between v[0] and v[1])
+for targetz in range(0, int(stats['extents']['z']['upper']), int(interval)):
+	dwg = Drawing('outputs/'+stlobj.name'/'+str(targetz)+'.svg', profile='tiny')
 
-    	A = (facet.v[0].x, facet.v[0].y, facet.v[0].z)
-    	B = (facet.v[1].x, facet.v[1].y, facet.v[1].z)
+	for facet in stlobj.facets:
+		pair = []
 
-    	print (findInterpolatedPoint(A, B))
+		if (facet.v[0].z > targetz and facet.v[1].z < targetz) or (facet.v[0].z < targetz and facet.v[1].z > targetz):
+			# Calculate the coordinates of one segment at z = 240 (between v[0] and v[1])
 
-    if (facet.v[0].z > targetz and facet.v[2].z < targetz) or (facet.v[0].z < targetz and facet.v[2].z > targetz):
-        # Calculate the coordinates of one segment at z = 240 (between v[0] and v[2])
+			A = (facet.v[0].x, facet.v[0].y, facet.v[0].z)
+			B = (facet.v[1].x, facet.v[1].y, facet.v[1].z)
 
-        A = (facet.v[0].x, facet.v[0].y, facet.v[0].z)
-        B = (facet.v[2].x, facet.v[2].y, facet.v[2].z)
+			pair.append(findInterpolatedPoint(A, B))
 
-        print (findInterpolatedPoint(A, B))
+		if (facet.v[0].z > targetz and facet.v[2].z < targetz) or (facet.v[0].z < targetz and facet.v[2].z > targetz):
+			# Calculate the coordinates of one segment at z = 240 (between v[0] and v[2])
 
-    if (facet.v[1].z > targetz and facet.v[2].z < targetz) or (facet.v[1].z < targetz and facet.v[2].z > targetz):
-        # Calculate the coordinates of one segment at z = 240 (between v[1] and v[2])
+			A = (facet.v[0].x, facet.v[0].y, facet.v[0].z)
+			B = (facet.v[2].x, facet.v[2].y, facet.v[2].z)
 
-        A = (facet.v[1].x, facet.v[1].y, facet.v[1].z)
-        B = (facet.v[2].x, facet.v[2].y, facet.v[2].z)
+			pair.append(findInterpolatedPoint(A, B))
 
-        print (findInterpolatedPoint(A, B))
+		if (facet.v[1].z > targetz and facet.v[2].z < targetz) or (facet.v[1].z < targetz and facet.v[2].z > targetz):
+			# Calculate the coordinates of one segment at z = 240 (between v[1] and v[2])
+
+			A = (facet.v[1].x, facet.v[1].y, facet.v[1].z)
+			B = (facet.v[2].x, facet.v[2].y, facet.v[2].z)
+
+			pair.append(findInterpolatedPoint(A, B))
+
+		if facet.v[0].z == targetz:
+			pair.append((int(facet.v[0].x), int(facet.v[0].y)))
+		elif facet.v[1].z == targetz:
+			pair.append((int(facet.v[1].x), int(facet.v[1].y)))
+		elif facet.v[2].z == targetz:
+			pair.append((int(facet.v[2].x), int(facet.v[2].y)))
+
+		if len(pair) == 2:
+			dwg.add(dwg.line(pair[0], pair[1], stroke=rgb(50,50,50, '%')))
+
+	dwg.save()

@@ -244,7 +244,7 @@ class Surface(object):
         self.mx = self.my = self.mz = 0.0
         con = f.read()
         f.close()
-        if con.find("vertex", 80) == -1:
+        if con.find(b"vertex", 80) == -1:
             self.processfacets = self._process_bin(con)
         else:
             self.processfacets = self._process_txt(con)
@@ -263,10 +263,10 @@ class Surface(object):
         '''Process the contents of a binary file as a generator.'''
         self.name, nf1 = struct.unpack("=80sI", contents[0:84])
         # Strip zero bytes, the prefix 'solid' and whitespace on both sides.
-        self.name = self.name.replace("solid ", "")
-        self.name = self.name.strip('\x00 \t\n\r')
+        self.name = self.name.replace(b"solid ", b"")
+        self.name = self.name.strip(b'\x00 \t\n\r')
         if len(self.name) == 0:
-            self.name = "unknown"
+            self.name = b"unknown"
         contents = contents[84:]
         facetsz = len(contents)
         nf2 = facetsz/50
