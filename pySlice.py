@@ -24,7 +24,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
-from stl import Surface, Vertex, Normal
+from Model3D import STLModel, Vector3, Normal
 from svgwrite import Drawing, rgb
 
 resolution = 0.1 # mms
@@ -34,39 +34,36 @@ model_file = 'models/yoda.stl'
 f = open(model_file, 'rb')
 stlobj = None
 
-stlobj = Surface(f)
-
-for result in stlobj.processfacets:
-	pass
+stlobj = STLModel(f)
 
 stats = stlobj.stats()
 print(stats)
 
-sub_vertex = Vertex(stats['extents']['x']['lower'], stats['extents']['y']['lower'], stats['extents']['z']['lower'])
-add_vertex = Vertex(0.5,0.5,0.5)
+sub_vertex = Vector3(stats['extents']['x']['lower'], stats['extents']['y']['lower'], stats['extents']['z']['lower'])
+add_vertex = Vector3(0.5,0.5,0.5)
 
-for facet in stlobj.facets:
-	facet.v[0] -= sub_vertex
-	facet.v[1] -= sub_vertex
-	facet.v[2] -= sub_vertex
+for facet in stlobj.triangles:
+	facet.vertices[0] -= sub_vertex
+	facet.vertices[1] -= sub_vertex
+	facet.vertices[2] -= sub_vertex
 
 	# The lines above have no effect on the normal.
 
-	facet.v[0] = (facet.v[0] * scale) + add_vertex
-	facet.v[1] = (facet.v[1] * scale) + add_vertex
-	facet.v[2] = (facet.v[2] * scale) + add_vertex
+	facet.vertices[0] = (facet.vertices[0] * scale) + add_vertex
+	facet.vertices[1] = (facet.vertices[1] * scale) + add_vertex
+	facet.vertices[2] = (facet.vertices[2] * scale) + add_vertex
 
-	facet.v[0].integerise()
-	facet.v[1].integerise()
-	facet.v[2].integerise()
+	facet.vertices[0].integerise()
+	facet.vertices[1].integerise()
+	facet.vertices[2].integerise()
 
 	# Recalculate the facet normal
 
-	u = stlobj.facets[0].v[1] - stlobj.facets[0].v[0]
-	v = stlobj.facets[0].v[2] - stlobj.facets[0].v[0]
+	u = stlobj.triangles[0].vertices[1] - stlobj.triangles[0].vertices[0]
+	v = stlobj.triangles[0].vertices[2] - stlobj.triangles[0].vertices[0]
 
 	facet.n = Normal((u.y * v.z)-(u.z*v.y), (u.z*v.x)-(u.x*v.z), (u.x*v.y)-(u.y*v.x))
-	stlobj._updateextents(facet)
+	stlobj.update_extents(facet)
 # So now, we have all of the points as integers...
 
 interval = scale * resolution
@@ -97,41 +94,41 @@ def findInterpolatedPoint(A, B):
 	return (coords)
 
 for targetz in range(0, int(stats['extents']['z']['upper']), int(interval)):
-	dwg = Drawing('outputs/'+stlobj.name'/'+str(targetz)+'.svg', profile='tiny')
+	dwg = Drawing('outputs/svg/'+str(targetz)+'.svg', profile='tiny')
 
-	for facet in stlobj.facets:
+	for facet in stlobj.triangles:
 		pair = []
 
-		if (facet.v[0].z > targetz and facet.v[1].z < targetz) or (facet.v[0].z < targetz and facet.v[1].z > targetz):
-			# Calculate the coordinates of one segment at z = 240 (between v[0] and v[1])
+		if (facet.vertices[0].z > targetz and facet.vertices[1].z < targetz) or (facet.vertices[0].z < targetz and facet.vertices[1].z > targetz):
+			# Calculate the coordinates of one segment at z = targetz (between v[0] and v[1])
 
-			A = (facet.v[0].x, facet.v[0].y, facet.v[0].z)
-			B = (facet.v[1].x, facet.v[1].y, facet.v[1].z)
-
-			pair.append(findInterpolatedPoint(A, B))
-
-		if (facet.v[0].z > targetz and facet.v[2].z < targetz) or (facet.v[0].z < targetz and facet.v[2].z > targetz):
-			# Calculate the coordinates of one segment at z = 240 (between v[0] and v[2])
-
-			A = (facet.v[0].x, facet.v[0].y, facet.v[0].z)
-			B = (facet.v[2].x, facet.v[2].y, facet.v[2].z)
+			A = (facet.vertices[0].x, facet.vertices[0].y, facet.vertices[0].z)
+			B = (facet.vertices[1].x, facet.vertices[1].y, facet.vertices[1].z)
 
 			pair.append(findInterpolatedPoint(A, B))
 
-		if (facet.v[1].z > targetz and facet.v[2].z < targetz) or (facet.v[1].z < targetz and facet.v[2].z > targetz):
-			# Calculate the coordinates of one segment at z = 240 (between v[1] and v[2])
+		if (facet.vertices[0].z > targetz and facet.vertices[2].z < targetz) or (facet.vertices[0].z < targetz and facet.vertices[2].z > targetz):
+			# Calculate the coordinates of one segment at z = targetz (between v[0] and v[2])
 
-			A = (facet.v[1].x, facet.v[1].y, facet.v[1].z)
-			B = (facet.v[2].x, facet.v[2].y, facet.v[2].z)
+			A = (facet.vertices[0].x, facet.vertices[0].y, facet.vertices[0].z)
+			B = (facet.vertices[2].x, facet.vertices[2].y, facet.vertices[2].z)
 
 			pair.append(findInterpolatedPoint(A, B))
 
-		if facet.v[0].z == targetz:
-			pair.append((int(facet.v[0].x), int(facet.v[0].y)))
-		elif facet.v[1].z == targetz:
-			pair.append((int(facet.v[1].x), int(facet.v[1].y)))
-		elif facet.v[2].z == targetz:
-			pair.append((int(facet.v[2].x), int(facet.v[2].y)))
+		if (facet.vertices[1].z > targetz and facet.vertices[2].z < targetz) or (facet.vertices[1].z < targetz and facet.vertices[2].z > targetz):
+			# Calculate the coordinates of one segment at z = targetz (between v[1] and v[2])
+
+			A = (facet.vertices[1].x, facet.vertices[1].y, facet.vertices[1].z)
+			B = (facet.vertices[2].x, facet.vertices[2].y, facet.vertices[2].z)
+
+			pair.append(findInterpolatedPoint(A, B))
+
+		if facet.vertices[0].z == targetz:
+			pair.append((int(facet.vertices[0].x), int(facet.vertices[0].y)))
+		elif facet.vertices[1].z == targetz:
+			pair.append((int(facet.vertices[1].x), int(facet.vertices[1].y)))
+		elif facet.vertices[2].z == targetz:
+			pair.append((int(facet.vertices[2].x), int(facet.vertices[2].y)))
 
 		if len(pair) == 2:
 			dwg.add(dwg.line(pair[0], pair[1], stroke=rgb(50,50,50, '%')))
