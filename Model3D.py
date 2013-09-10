@@ -51,11 +51,6 @@ class Vector3(object):
 						self.z*other.x-self.x*other.z,
 						self.x*other.y-self.y*other.x)
 
-	def integerise(self):
-		self.x = int(self.x)
-		self.y = int(self.y)
-		self.z = int(self.z)
-
 class Normal(Vector3):
 	'''Class for a 3D Normal Vector in Cartesian Space'''
 

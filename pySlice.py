@@ -32,7 +32,7 @@ def slice_file(f=None, resolution=0.1):
 	print("Status: Loading File.")
 
 	stlobj = STLModel(f)
-	scale = 10
+	scale = 100
 	stats = stlobj.stats()
 
 	sub_vertex = Vector3(stats['extents']['x']['lower'], stats['extents']['y']['lower'], stats['extents']['z']['lower'])
@@ -55,10 +55,6 @@ def slice_file(f=None, resolution=0.1):
 		facet.vertices[1] = (facet.vertices[1] * scale) + add_vertex
 		facet.vertices[2] = (facet.vertices[2] * scale) + add_vertex
 
-		facet.vertices[0].integerise()
-		facet.vertices[1].integerise()
-		facet.vertices[2].integerise()
-
 		# Recalculate the facet normal
 
 		u = stlobj.triangles[0].vertices[1] - stlobj.triangles[0].vertices[0]
@@ -66,7 +62,6 @@ def slice_file(f=None, resolution=0.1):
 
 		facet.n = Normal((u.y * v.z)-(u.z*v.y), (u.z*v.x)-(u.x*v.z), (u.x*v.y)-(u.y*v.x))
 		stlobj.update_extents(facet)
-	# So now, we have all of the points as integers...
 
 	print("Status: Calculating Slices")
 
@@ -134,7 +129,7 @@ def slice_file(f=None, resolution=0.1):
 				pair.append((int(facet.vertices[2].x), int(facet.vertices[2].y)))
 
 			if len(pair) == 2:
-				dwg.add(dwg.line(pair[0], pair[1], stroke=rgb(50,50,50, '%')))
+				dwg.add(dwg.line(pair[0], pair[1], stroke=rgb(0,0,0, '%')))
 
 		dwg.save()
 
