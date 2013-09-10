@@ -34,106 +34,48 @@ start_time = time.time()
 def slice_file(f=None, resolution=0.1):
 	print("Status: Loading File.")
 
-	stlobj = STLModel(f)
+	model = STLModel(f)
 	scale = 100
-	stats = stlobj.stats()
+	stats = model.stats()
 
 	sub_vertex = Vector3(stats['extents']['x']['lower'], stats['extents']['y']['lower'], stats['extents']['z']['lower'])
 	add_vertex = Vector3(0.5,0.5,0.5)
 
-	stlobj.xmin = stlobj.xmax = None
-	stlobj.ymin = stlobj.ymax = None
-	stlobj.zmin = stlobj.zmax = None
+	model.xmin = model.xmax = None
+	model.ymin = model.ymax = None
+	model.zmin = model.zmax = None
 
 	print("Status: Scaling Triangles.")
 
-	for facet in stlobj.triangles:
-		facet.vertices[0] -= sub_vertex
-		facet.vertices[1] -= sub_vertex
-		facet.vertices[2] -= sub_vertex
+	for triangle in model.triangles:
+		triangle.vertices[0] -= sub_vertex
+		triangle.vertices[1] -= sub_vertex
+		triangle.vertices[2] -= sub_vertex
 
 		# The lines above have no effect on the normal.
 
-		facet.vertices[0] = (facet.vertices[0] * scale) + add_vertex
-		facet.vertices[1] = (facet.vertices[1] * scale) + add_vertex
-		facet.vertices[2] = (facet.vertices[2] * scale) + add_vertex
+		triangle.vertices[0] = (triangle.vertices[0] * scale) + add_vertex
+		triangle.vertices[1] = (triangle.vertices[1] * scale) + add_vertex
+		triangle.vertices[2] = (triangle.vertices[2] * scale) + add_vertex
 
-		# Recalculate the facet normal
+		# Recalculate the triangle normal
 
-		u = stlobj.triangles[0].vertices[1] - stlobj.triangles[0].vertices[0]
-		v = stlobj.triangles[0].vertices[2] - stlobj.triangles[0].vertices[0]
+		u = model.triangles[0].vertices[1] - model.triangles[0].vertices[0]
+		v = model.triangles[0].vertices[2] - model.triangles[0].vertices[0]
 
-		facet.n = Normal((u.y * v.z)-(u.z*v.y), (u.z*v.x)-(u.x*v.z), (u.x*v.y)-(u.y*v.x))
-		stlobj.update_extents(facet)
+		triangle.n = Normal((u.y * v.z)-(u.z*v.y), (u.z*v.x)-(u.x*v.z), (u.x*v.y)-(u.y*v.x))
+		model.update_extents(triangle)
 
 	print("Status: Calculating Slices")
 
 	interval = scale * resolution
-	stats = stlobj.stats()
-
-	def findInterpolatedPoint(A, B):
-		# Find the vector between the two...
-
-		V = (float(B[0]-A[0]), float(B[1]-A[1]), float(B[2]-A[2]))
-
-		# Therefore the interpolated point = ('some n' * V)+A
-
-		# ( x )   
-		# ( y ) = n*V + A 
-		# (240)
-
-		refz = targetz - A[2]
-
-		# ( x  )
-		# ( y  ) = nV
-		# (refz)
-
-		n = float(refz/V[2])
-
-		coords = (int(n * V[0] + A[0]), int(n * V[1] + A[1]))
-
-		return (coords)
+	stats = model.stats()
 
 	for targetz in range(0, int(stats['extents']['z']['upper']), int(interval)):
 		dwg = Drawing('outputs/svg/'+str(targetz)+'.svg', profile='tiny')
-
-		for facet in stlobj.triangles:
-			pair = []
-
-			if (facet.vertices[0].z > targetz and facet.vertices[1].z < targetz) or (facet.vertices[0].z < targetz and facet.vertices[1].z > targetz):
-				# Calculate the coordinates of one segment at z = targetz (between v[0] and v[1])
-
-				A = (facet.vertices[0].x, facet.vertices[0].y, facet.vertices[0].z)
-				B = (facet.vertices[1].x, facet.vertices[1].y, facet.vertices[1].z)
-
-				pair.append(findInterpolatedPoint(A, B))
-
-			if (facet.vertices[0].z > targetz and facet.vertices[2].z < targetz) or (facet.vertices[0].z < targetz and facet.vertices[2].z > targetz):
-				# Calculate the coordinates of one segment at z = targetz (between v[0] and v[2])
-
-				A = (facet.vertices[0].x, facet.vertices[0].y, facet.vertices[0].z)
-				B = (facet.vertices[2].x, facet.vertices[2].y, facet.vertices[2].z)
-
-				pair.append(findInterpolatedPoint(A, B))
-
-			if (facet.vertices[1].z > targetz and facet.vertices[2].z < targetz) or (facet.vertices[1].z < targetz and facet.vertices[2].z > targetz):
-				# Calculate the coordinates of one segment at z = targetz (between v[1] and v[2])
-
-				A = (facet.vertices[1].x, facet.vertices[1].y, facet.vertices[1].z)
-				B = (facet.vertices[2].x, facet.vertices[2].y, facet.vertices[2].z)
-
-				pair.append(findInterpolatedPoint(A, B))
-
-			if facet.vertices[0].z == targetz:
-				pair.append((int(facet.vertices[0].x), int(facet.vertices[0].y)))
-			elif facet.vertices[1].z == targetz:
-				pair.append((int(facet.vertices[1].x), int(facet.vertices[1].y)))
-			elif facet.vertices[2].z == targetz:
-				pair.append((int(facet.vertices[2].x), int(facet.vertices[2].y)))
-
-			if len(pair) == 2:
-				dwg.add(dwg.line(pair[0], pair[1], stroke=rgb(0,0,0, '%')))
-
+		pairs = model.slice_at_z(targetz)
+		for pair in pairs:
+			dwg.add(dwg.line(pair[0], pair[1], stroke=rgb(0, 0, 0, "%")))
 		dwg.save()
 
 	print("Status: Finished Outputting Slices")

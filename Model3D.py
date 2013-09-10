@@ -146,6 +146,29 @@ class Edge(object):
 			return k2+k1
 		return k1+k2
 
+	def find_interpolated_point_at_z(self, targetz):
+		if ((self.p[0].z < targetz and self.p[1].z > targetz) or
+			(self.p[0].z > targetz and self.p[1].z < targetz)):
+
+			# Firstly, find the vector between the two points.
+
+			V = self.p[0]-self.p[1]
+
+			# As a result, the interpolated point is a scalar multiple of V.
+
+			refz = targetz - self.p[0].z
+			multiple = float(refz/V.z)
+
+			coords = V * multiple
+			coords += self.p[0]
+			
+			return (coords.x, coords.y)
+		elif (self.p[0].z == targetz):
+			return (self.p[0].x, self.p[0].y)
+		elif (self.p[1].z == targetz):
+			return (self.p[1].x, self.p[1].y)
+		else:
+			return None
 
 class Triangle(object):
 	'''Class to represent a triangle in 3D Space.'''
@@ -177,6 +200,18 @@ class Triangle(object):
 
 	def __str__(self):
 		return 'Triangle: %s, %s, %s' % (self.vertices[0], self.vertices[1], self.vertices[2])
+
+	def find_interpolated_points_at_z(self, targetz):
+		edges = [Edge(self.vertices[0],self.vertices[1]), Edge(self.vertices[1], self.vertices[2]), Edge(self.vertices[0], self.vertices[2])]
+		points = []
+
+		for edge in edges:
+			interp = edge.find_interpolated_point_at_z(targetz)
+
+			if interp is not None:
+				points.append(interp)
+
+		return points
 
 class Model3D(object):
 	'''Abstract Class to represent 3D objects. Cannot usually be used '''
@@ -325,6 +360,19 @@ class Model3D(object):
 
 		return out
 
+	def slice_at_z(self, targetz):
+		'''Function to slice the model at a certain z coordinate. Returns
+		an array of tuples, describing the various lines between points.'''
+		output = []
+
+		for triangle in self.triangles:
+			points = triangle.find_interpolated_points_at_z(targetz)
+
+			if len(points) == 2:
+				output.append((points[0], points[1]))
+
+		return output
+
 class STLModel(Model3D):
 
 	def __init__(self, f=None):
@@ -400,4 +448,3 @@ class STLModel(Model3D):
 			
 			self.add_triangle(v1, v2, v3, norm)
 			del items[:21]
-			
