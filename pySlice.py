@@ -27,6 +27,9 @@ THE SOFTWARE.
 from Model3D import STLModel, Vector3, Normal
 from svgwrite import Drawing, rgb
 import sys
+import time
+
+start_time = time.time()
 
 def slice_file(f=None, resolution=0.1):
 	print("Status: Loading File.")
@@ -133,7 +136,7 @@ def slice_file(f=None, resolution=0.1):
 
 		dwg.save()
 
-	print("Status: Finished Outputting Slices.c")
+	print("Status: Finished Outputting Slices")
 
 
 if __name__ == '__main__':
@@ -154,3 +157,6 @@ if __name__ == '__main__':
 
 	args = parser.parse_args()
 	slice_file(args.file, args.resolution)
+
+	end_time = time.time()
+	print ("Execution Time: %is" % (end_time-start_time))
