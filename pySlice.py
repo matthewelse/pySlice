@@ -27,15 +27,13 @@ THE SOFTWARE.
 from Model3D import STLModel, Vector3, Normal
 from svgwrite import Drawing, rgb
 import sys
-import time
 
-start_time = time.time()
-
+#@profile
 def slice_file(f=None, resolution=0.1):
 	print("Status: Loading File.")
 
 	model = STLModel(f)
-	scale = 100
+	scale = 10
 	stats = model.stats()
 
 	sub_vertex = Vector3(stats['extents']['x']['lower'], stats['extents']['y']['lower'], stats['extents']['z']['lower'])
@@ -70,6 +68,7 @@ def slice_file(f=None, resolution=0.1):
 
 	interval = scale * resolution
 	stats = model.stats()
+	print stats
 
 	for targetz in range(0, int(stats['extents']['z']['upper']), int(interval)):
 		dwg = Drawing('outputs/svg/'+str(targetz)+'.svg', profile='tiny')
@@ -99,6 +98,3 @@ if __name__ == '__main__':
 
 	args = parser.parse_args()
 	slice_file(args.file, args.resolution)
-
-	end_time = time.time()
-	print ("Execution Time: %is" % (end_time-start_time))

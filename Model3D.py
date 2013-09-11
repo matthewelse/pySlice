@@ -146,30 +146,6 @@ class Edge(object):
 			return k2+k1
 		return k1+k2
 
-	def find_interpolated_point_at_z(self, targetz):
-		if ((self.p[0].z < targetz and self.p[1].z > targetz) or
-			(self.p[0].z > targetz and self.p[1].z < targetz)):
-
-			# Firstly, find the vector between the two points.
-
-			V = self.p[0]-self.p[1]
-
-			# As a result, the interpolated point is a scalar multiple of V.
-
-			refz = targetz - self.p[0].z
-			multiple = float(refz/V.z)
-
-			coords = V * multiple
-			coords += self.p[0]
-			
-			return (coords.x, coords.y)
-		elif (self.p[0].z == targetz):
-			return (self.p[0].x, self.p[0].y)
-		elif (self.p[1].z == targetz):
-			return (self.p[1].x, self.p[1].y)
-		else:
-			return None
-
 class Triangle(object):
 	'''Class to represent a triangle in 3D Space.'''
 
@@ -201,17 +177,66 @@ class Triangle(object):
 	def __str__(self):
 		return 'Triangle: %s, %s, %s' % (self.vertices[0], self.vertices[1], self.vertices[2])
 
+	#@profile
+	def findInterpolatedPoint(self, A, B, targetz):
+		# Find the vector between the two...
+
+		V = (B[0]-A[0], B[1]-A[1], B[2]-A[2])
+
+		# Therefore the interpolated point = ('some n' * V)+A
+
+		# ( x )   
+		# ( y ) = n*V + A 
+		# (240)
+
+		refz = targetz - A[2]
+
+		# ( x  )
+		# ( y  ) = nV
+		# (refz)
+
+		n = refz/V[2]
+
+		coords = (n * V[0] + A[0], n * V[1] + A[1])
+
+		return (coords)
+
+	#@profile
 	def find_interpolated_points_at_z(self, targetz):
-		edges = [Edge(self.vertices[0],self.vertices[1]), Edge(self.vertices[1], self.vertices[2]), Edge(self.vertices[0], self.vertices[2])]
-		points = []
+		pair = []
 
-		for edge in edges:
-			interp = edge.find_interpolated_point_at_z(targetz)
+		if (self.vertices[0].z > targetz and self.vertices[1].z < targetz) or (self.vertices[0].z < targetz and self.vertices[1].z > targetz):
+			# Calculate the coordinates of one segment at z = targetz (between v[0] and v[1])
 
-			if interp is not None:
-				points.append(interp)
+			A = (self.vertices[0].x, self.vertices[0].y, self.vertices[0].z)
+			B = (self.vertices[1].x, self.vertices[1].y, self.vertices[1].z)
 
-		return points
+			pair.append(self.findInterpolatedPoint(A, B, targetz))
+
+		if (self.vertices[0].z > targetz and self.vertices[2].z < targetz) or (self.vertices[0].z < targetz and self.vertices[2].z > targetz):
+			# Calculate the coordinates of one segment at z = targetz (between v[0] and v[2])
+
+			A = (self.vertices[0].x, self.vertices[0].y, self.vertices[0].z)
+			B = (self.vertices[2].x, self.vertices[2].y, self.vertices[2].z)
+
+			pair.append(self.findInterpolatedPoint(A, B, targetz))
+
+		if (self.vertices[1].z > targetz and self.vertices[2].z < targetz) or (self.vertices[1].z < targetz and self.vertices[2].z > targetz):
+			# Calculate the coordinates of one segment at z = targetz (between v[1] and v[2])
+
+			A = (self.vertices[1].x, self.vertices[1].y, self.vertices[1].z)
+			B = (self.vertices[2].x, self.vertices[2].y, self.vertices[2].z)
+
+			pair.append(self.findInterpolatedPoint(A, B, targetz))
+
+		if self.vertices[0].z == targetz:
+			pair.append((self.vertices[0].x, self.vertices[0].y))
+		elif self.vertices[1].z == targetz:
+			pair.append((self.vertices[1].x, self.vertices[1].y))
+		elif self.vertices[2].z == targetz:
+			pair.append((self.vertices[2].x, self.vertices[2].y))
+
+		return pair
 
 class Model3D(object):
 	'''Abstract Class to represent 3D objects. Cannot usually be used '''
@@ -360,6 +385,7 @@ class Model3D(object):
 
 		return out
 
+	#@profile
 	def slice_at_z(self, targetz):
 		'''Function to slice the model at a certain z coordinate. Returns
 		an array of tuples, describing the various lines between points.'''

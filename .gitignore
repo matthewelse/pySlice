@@ -40,3 +40,4 @@ nosetests.xml
 # Custom bits :)
 outputs
 models
+*.lprof
