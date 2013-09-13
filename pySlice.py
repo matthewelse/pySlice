@@ -68,9 +68,9 @@ def slice_file(f=None, resolution=0.1):
 
 	interval = scale * resolution
 	stats = model.stats()
-	print stats
+	print(stats)
 
-	for targetz in xrange(0, int(stats['extents']['z']['upper']), int(interval)):
+	for targetz in range(0, int(stats['extents']['z']['upper']), int(interval)):
 		dwg = Drawing('outputs/svg/'+str(targetz)+'.svg', profile='tiny')
 		pairs = model.slice_at_z(targetz)
 		for pair in pairs:

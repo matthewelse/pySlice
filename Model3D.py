@@ -15,6 +15,7 @@ class Vector3(object):
 		self.z = float(z)
 
 		key_string = '(%f, %f, %f)' % (self.x, self.y, self.z)
+		key_string = key_string.encode('utf-8')
 		self.hash = md5(key_string).hexdigest()
 
 	def __add__(self, other):
@@ -407,20 +408,20 @@ class STLModel(Model3D):
 		contents = f.read()
 		f.close()
 
-		if contents.find("vertex", 80) == -1:
+		if contents.find(b"vertex", 80) == -1:
 			# File is a binary STL file.
 			self.process_bin(contents)
 		else:
 			self.process_text(contents)
 
 	def process_bin(self, contents=None):
-		self.name, num_facets_1 = unpack("=80sI", contents[:84])
+		self.name, num_facets_1 = unpack(b"=80sI", contents[:84])
 
-		self.name = self.name.replace("solid", "")
-		self.name = self.name.strip('\x00 \t\n\r')
+		self.name = self.name.replace(b"solid", b"")
+		self.name = self.name.strip(b'\x00 \t\n\r')
 
 		if len(self.name) == 0:
-			self.name = "Unkown"
+			self.name = b"Unkown"
 
 		contents = contents[84:]
 		facetsz = len(contents)
@@ -435,7 +436,7 @@ class STLModel(Model3D):
 
 		for i in items:
 			nx, ny, nz, f1x, f1y, f1z, f2x, f2y, f2z, f3x, f3y, f3z = \
-				unpack("=ffffffffffffxx", i)
+				unpack(b"=ffffffffffffxx", i)
 			v1 = Vector3(f1x, f1y, f1z)
 			v2 = Vector3(f2x, f2y, f2z)
 			v3 = Vector3(f3x, f3y, f3z)
