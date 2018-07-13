@@ -451,7 +451,8 @@ class STLModel(Model3D):
 		'''Process the contents of a text file as a generator.'''
 		items = contents.split()
 		del contents
-		items = [s.strip() for s in items]
+		items = [s.strip().decode("utf-8")  for s in items]
+
 		try:
 			sn = items.index("solid")+1
 			en = items.index("facet")
