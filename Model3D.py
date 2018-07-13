@@ -1,6 +1,7 @@
 from hashlib import md5
 from struct import unpack
 from math import fabs, sqrt
+from sympy import Plane, Point3D, Segment3D
 
 # This is the difference between points, below which we can consider them equal.
 DIFFERENCE_LIMIT = 1e-7
@@ -239,6 +240,30 @@ class Triangle(object):
 
 		return pair
 
+	def find_interpolated_points_at_plane(self, plane):
+		pair = []
+		v1 = Point3D(self.vertices[0].x, self.vertices[0].y, self.vertices[0].z)
+		v2 = Point3D(self.vertices[1].x, self.vertices[1].y, self.vertices[1].z)
+		v3 = Point3D(self.vertices[2].x, self.vertices[2].y, self.vertices[2].z)
+		l1 = Segment3D(v1, v2)
+		l2 = Segment3D(v1, v3)
+		l3 = Segment3D(v2, v3)
+
+		i1 = plane.intersection(l1)[0]
+		i2 = plane.intersection(l2)[0]
+		i3 = plane.intersection(l3)[0]
+
+		if l1.contains(i1):
+			pair.append(i1)
+		if l2.contains(i2):
+			pair.append(i2)
+		if l3.contains(i3):
+			pair.append(i3)
+		if(len(pair) > 0):
+			print(pair)
+			print(len(pair))
+		
+
 class Model3D(object):
 	'''Abstract Class to represent 3D objects. Cannot usually be used '''
 
@@ -399,6 +424,14 @@ class Model3D(object):
 				output.append((points[0], points[1]))
 
 		return output
+
+	def slice_at_plane(self, targetz, plane):
+		'''Function to slice the model at certain transforms of a plane.
+		Returns an array of tuples, describing the various lines between
+		points'''
+		min_dist = 1000000000
+		for triangle in self.triangles:
+			triangle.find_interpolated_points_at_plane(plane)
 
 class STLModel(Model3D):
 

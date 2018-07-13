@@ -26,6 +26,8 @@ THE SOFTWARE.
 """
 from Model3D import STLModel, Vector3, Normal
 from svgwrite import Drawing, rgb
+from sympy import Plane, Point3D
+
 import sys
 
 #@profile
@@ -72,7 +74,17 @@ def slice_file(f=None, resolution=0.1):
 
 	for targetz in range(0, int(stats['extents']['z']['upper']), int(interval)):
 		dwg = Drawing('outputs/svg/'+str(targetz)+'.svg', profile='tiny')
-		pairs = model.slice_at_z(targetz)
+
+		v1 = Point3D(0.589927, 0.778019, -0.216038)
+		v2 = Point3D(-0.340419, -0.002971, -0.940269)
+		org = Point3D(0, 0, 0)
+
+		slice_loc = Point3D(91.744177, -237.718833, 183.578566)
+		
+		plane = Plane(v1 + slice_loc,
+					  v2 + slice_loc,
+					  org + slice_loc)
+		pairs = model.slice_at_plane(targetz, plane)
 		for pair in pairs:
 			dwg.add(dwg.line(pair[0], pair[1], stroke=rgb(0, 0, 0, "%")))
 		dwg.save()
