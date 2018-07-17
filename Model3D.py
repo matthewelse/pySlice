@@ -2,6 +2,7 @@ from hashlib import md5
 from struct import unpack
 from math import fabs, sqrt
 from sympy import Plane, Point3D, Segment3D
+from sys import stdout
 
 # This is the difference between points, below which we can consider them equal.
 DIFFERENCE_LIMIT = 1e-7
@@ -243,6 +244,9 @@ class Triangle(object):
 	def find_interpolated_points_at_plane(self, plane):
 		pair = []
 		v1 = Point3D(self.vertices[0].x, self.vertices[0].y, self.vertices[0].z)
+		if float(plane.distance(v1)) > 10:
+			return pair
+
 		v2 = Point3D(self.vertices[1].x, self.vertices[1].y, self.vertices[1].z)
 		v3 = Point3D(self.vertices[2].x, self.vertices[2].y, self.vertices[2].z)
 		l1 = Segment3D(v1, v2)
@@ -259,9 +263,8 @@ class Triangle(object):
 			pair.append(i2)
 		if l3.contains(i3):
 			pair.append(i3)
-		if(len(pair) > 0):
-			print(pair)
-			print(len(pair))
+
+		return pair
 		
 
 class Model3D(object):
@@ -425,13 +428,27 @@ class Model3D(object):
 
 		return output
 
-	def slice_at_plane(self, targetz, plane):
+	def slice_at_plane(self, plane, x_axis, y_axis):
 		'''Function to slice the model at certain transforms of a plane.
 		Returns an array of tuples, describing the various lines between
 		points'''
-		min_dist = 1000000000
-		for triangle in self.triangles:
-			triangle.find_interpolated_points_at_plane(plane)
+		length = len(self.triangles)
+		output = []
+
+		for i, triangle in enumerate(self.triangles):
+			points = triangle.find_interpolated_points_at_plane(plane)
+
+			if len(points) == 2:
+				output.append((self.convert_to_2d(x_axis, y_axis, points[0]),
+							   self.convert_to_2d(x_axis, y_axis, points[1])))
+
+			progress(i, length)
+		return output
+
+	def convert_to_2d(self, x_axis, y_axis, point):
+		x = float(x_axis.distance(point))
+		y = float(y_axis.distance(point))
+		return [x, y]
 
 class STLModel(Model3D):
 
@@ -498,6 +515,7 @@ class STLModel(Model3D):
 		nf1 = items.count('facet')
 		del items[0:en]
 		# Items now begins with "facet"
+
 		while items[0] == "facet":
 			v1 = Vector3(items[8], items[9], items[10])
 			v2 = Vector3(items[12], items[13], items[14])
@@ -509,3 +527,13 @@ class STLModel(Model3D):
 			
 			self.add_triangle(v1, v2, v3, norm)
 			del items[:21]
+
+def progress(count, total, status=''):
+	bar_len = 60
+	filled_len = int(round(bar_len * count / float(total)))
+
+	percents = round(100.0 * count / float(total), 1)
+	bar = '=' * filled_len + '-' * (bar_len - filled_len)
+
+	stdout.write('[%s] %s%s ...%s\r' % (bar, percents, '%', status))
+	stdout.flush()
