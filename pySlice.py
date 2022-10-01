@@ -26,7 +26,8 @@ THE SOFTWARE.
 """
 from Model3D import STLModel, Vector3, Normal
 from svgwrite import Drawing, rgb
-import sys
+import sys, os
+import numpy as np
 
 #@profile
 def slice_file(f=None, resolution=0.1):
@@ -70,8 +71,8 @@ def slice_file(f=None, resolution=0.1):
 	stats = model.stats()
 	print(stats)
 
-	for targetz in range(0, int(stats['extents']['z']['upper']), int(interval)):
-		dwg = Drawing('outputs/svg/'+str(targetz)+'.svg', profile='tiny')
+	for index, targetz in enumerate(np.arange(0, stats['extents']['z']['upper'], interval)):
+		dwg = Drawing('outputs/svg/'+str(index)+'.svg', profile='tiny')
 		pairs = model.slice_at_z(targetz)
 		for pair in pairs:
 			dwg.add(dwg.line(pair[0], pair[1], stroke=rgb(0, 0, 0, "%")))
@@ -93,8 +94,13 @@ if __name__ == '__main__':
 						default='models/yoda.stl',
 						type=argparse.FileType('rb'))
 	parser.add_argument('-r', '--resolution', type=float,
-						default=0.1,
+						default=0.01,
 						help='The Z-Axis resolution of the printer, in mms')
-
+	parser.add_argument('-d', '--dirs', type=str,
+						default='./outputs/svg',
+						help='The path to the output directory')
 	args = parser.parse_args()
+ 
+	if not os.path.exists(args.dirs):
+		os.makedirs(args.dirs)
 	slice_file(args.file, args.resolution)

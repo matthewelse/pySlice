@@ -41,3 +41,5 @@ nosetests.xml
 outputs
 models
 *.lprof
+Combined_Jan_Part.stl
+.gitignore
